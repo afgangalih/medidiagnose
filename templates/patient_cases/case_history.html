@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Case History — MediDiagnose{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Section Header -->
+    <div class="section-header animate-in">
+        <div class="d-flex align-items-center gap-3 mb-2">
+            <div style="width: 48px; height: 48px; background: var(--md-gradient); border-radius: 14px;
+                        display: flex; align-items: center; justify-content: center;">
+                <i class="bi bi-clock-history text-white fs-4"></i>
+            </div>
+            <div>
+                <h1 class="mb-0">Case History</h1>
+                <p class="mb-0">Browse all past diagnostic sessions and their outcomes.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filters -->
+    <div class="md-card mb-4 animate-in animate-delay-1">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end" id="filter-form">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold" style="font-size: 0.85rem;">
+                        <i class="bi bi-calendar-event me-1"></i>From Date
+                    </label>
+                    <input type="date" class="form-control" id="date_from" name="date_from"
+                           value="{{ date_from }}" style="border-radius: 10px;">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold" style="font-size: 0.85rem;">
+                        <i class="bi bi-calendar-event me-1"></i>To Date
+                    </label>
+                    <input type="date" class="form-control" id="date_to" name="date_to"
+                           value="{{ date_to }}" style="border-radius: 10px;">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-md-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'patient_cases:case-history' %}"
+                       class="btn btn-outline-secondary"
+                       style="border-radius: 10px; font-weight: 500;">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-3 animate-in animate-delay-2">
+        <span class="text-muted" style="font-size: 0.88rem;">
+            <i class="bi bi-folder2-open me-1"></i>
+            Showing {{ cases|length }} of {{ page_obj.paginator.count }} total case{{ page_obj.paginator.count|pluralize }}
+        </span>
+    </div>
+
+    <!-- Cases Table -->
+    <div class="md-card mb-4 animate-in animate-delay-2">
+        <div class="table-responsive md-table">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>Patient</th>
+                        <th>Date</th>
+                        <th>Symptoms</th>
+                        <th>Top Diagnosis</th>
+                        <th>Confidence</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in cases %}
+                    <tr>
+                        <td>
+                            <span class="fw-semibold" style="color: var(--md-primary);">#{{ case.pk }}</span>
+                        </td>
+                        <td>
+                            <span class="fw-medium">{{ case.patient_identifier }}</span>
+                        </td>
+                        <td>
+                            <span style="font-size: 0.85rem;">{{ case.session_date|date:"M d, Y" }}</span>
+                            <br>
+                            <span class="text-muted" style="font-size: 0.78rem;">{{ case.session_date|date:"H:i" }}</span>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill"
+                                  style="background: var(--md-primary-light); color: var(--md-primary); font-weight: 600;">
+                                {{ case.reported_symptoms_snapshot|length }}
+                            </span>
+                        </td>
+                        <td>
+                            {% with top=case.inferred_results|first %}
+                                {% if top %}
+                                    <span class="fw-medium">{{ top.disease_name }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            {% with top=case.inferred_results|first %}
+                                {% if top %}
+                                    {% widthratio top.final_confidence 1 100 as pct %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="md-progress flex-fill" style="min-width: 60px;">
+                                            <div class="md-progress-bar {% if pct >= 70 %}high{% elif pct >= 40 %}medium{% else %}low{% endif %}"
+                                                 style="width: {{ pct }}% !important;"></div>
+                                        </div>
+                                        <span class="fw-semibold" style="font-size: 0.82rem; min-width: 36px;">{{ pct }}%</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'patient_cases:diagnosis-result' pk=case.pk %}"
+                               class="btn btn-sm"
+                               style="background: var(--md-primary-light); color: var(--md-primary);
+                                      border-radius: 8px; font-weight: 500; font-size: 0.8rem;">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                            <h6 class="mt-3 fw-semibold text-muted">No Cases Found</h6>
+                            <p class="text-muted mb-3" style="font-size: 0.9rem;">
+                                {% if date_from or date_to %}
+                                    No cases match the selected date range. Try clearing the filters.
+                                {% else %}
+                                    No diagnostic sessions have been recorded yet.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'patient_cases:symptom-checker' %}" class="btn btn-md-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i>Run First Diagnosis
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Case history pagination" class="animate-in animate-delay-3">
+        <ul class="pagination justify-content-center gap-1">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+                   style="border-radius: 8px; font-weight: 500;">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link" style="border-radius: 8px; font-weight: 600;
+                                                    background: var(--md-primary); border-color: var(--md-primary);">
+                        {{ num }}
+                    </span>
+                </li>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+                       style="border-radius: 8px; font-weight: 500;">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+                   style="border-radius: 8px; font-weight: 500;">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

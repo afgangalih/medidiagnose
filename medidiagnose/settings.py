@@ -46,11 +46,14 @@ INSTALLED_APPS: list[str] = [
     "django.contrib.staticfiles",
     # Third-party apps
     "django_extensions",
+    "rest_framework",
+    "django_filters",
     # Project apps
     "knowledge_base.apps.KnowledgeBaseConfig",
     "inference_engine.apps.InferenceEngineConfig",
     "patient_cases.apps.PatientCasesConfig",
     "explanations.apps.ExplanationsConfig",
+    "api.apps.ApiConfig",
 ]
 
 MIDDLEWARE: list[str] = [
@@ -126,9 +129,21 @@ USE_TZ: bool = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 # =============================================================================
 STATIC_URL: str = "static/"
+STATICFILES_DIRS: list[Path] = [BASE_DIR / "static"]
 
 # =============================================================================
 # Default Primary Key Field Type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 # =============================================================================
 DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"
+
+# =============================================================================
+# Django REST Framework
+# =============================================================================
+REST_FRAMEWORK: dict = {
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 25,
+}

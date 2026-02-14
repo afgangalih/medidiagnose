@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MediDiagnose — AI-powered Medical Expert System for intelligent symptom-based diagnosis.">
+    <title>{% block title %}MediDiagnose{% endblock %}</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts — Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Design Tokens ─────────────────────────────────────────── */
+        :root {
+            --md-primary: #4f46e5;
+            --md-primary-hover: #4338ca;
+            --md-primary-light: #eef2ff;
+            --md-secondary: #0f172a;
+            --md-accent: #06b6d4;
+            --md-success: #10b981;
+            --md-warning: #f59e0b;
+            --md-danger: #ef4444;
+            --md-surface: #ffffff;
+            --md-surface-alt: #f8fafc;
+            --md-border: #e2e8f0;
+            --md-text: #1e293b;
+            --md-text-muted: #64748b;
+            --md-radius: 12px;
+            --md-radius-lg: 16px;
+            --md-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --md-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.03);
+            --md-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08), 0 20px 48px rgba(0, 0, 0, 0.04);
+            --md-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+            --md-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        /* ── Global Styles ─────────────────────────────────────────── */
+        body {
+            font-family: var(--md-font);
+            color: var(--md-text);
+            background: var(--md-surface-alt);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        main {
+            flex: 1;
+            min-height: calc(100vh - 160px);
+            padding-top: 0.5rem;
+            padding-bottom: 2rem;
+        }
+
+        /* ── Navbar ────────────────────────────────────────────────── */
+        .md-navbar {
+            background: var(--md-surface);
+            border-bottom: 1px solid var(--md-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: box-shadow 0.3s ease;
+        }
+        .md-navbar.scrolled {
+            box-shadow: var(--md-shadow-md);
+        }
+        .md-navbar .navbar-brand {
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: var(--md-primary);
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .md-navbar .navbar-brand .brand-icon {
+            width: 34px;
+            height: 34px;
+            background: var(--md-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+        .md-navbar .nav-link {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--md-text-muted);
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .md-navbar .nav-link:hover,
+        .md-navbar .nav-link.active {
+            color: var(--md-primary);
+            background: var(--md-primary-light);
+        }
+
+        /* ── Cards ─────────────────────────────────────────────────── */
+        .md-card {
+            background: var(--md-surface);
+            border: 1px solid var(--md-border);
+            border-radius: var(--md-radius-lg);
+            box-shadow: var(--md-shadow-sm);
+            transition: all 0.25s ease;
+        }
+        .md-card:hover {
+            box-shadow: var(--md-shadow-md);
+            transform: translateY(-2px);
+        }
+        .md-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--md-border);
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+        }
+        .md-card .card-body {
+            padding: 1.5rem;
+        }
+
+        /* ── Buttons ───────────────────────────────────────────────── */
+        .btn-md-primary {
+            background: var(--md-gradient);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.65rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: -0.01em;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+        }
+        .btn-md-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+            color: #fff;
+        }
+
+        /* ── Urgency Badges ────────────────────────────────────────── */
+        .badge-urgency-low {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            font-weight: 600;
+            padding: 0.4em 0.75em;
+            border-radius: 8px;
+        }
+        .badge-urgency-medium {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            font-weight: 600;
+            padding: 0.4em 0.75em;
+            border-radius: 8px;
+        }
+        .badge-urgency-high {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            font-weight: 600;
+            padding: 0.4em 0.75em;
+            border-radius: 8px;
+        }
+
+        /* ── Progress Bars ─────────────────────────────────────────── */
+        .md-progress {
+            height: 10px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .md-progress-bar {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .md-progress-bar.high {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .md-progress-bar.medium {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        .md-progress-bar.low {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        /* ── Section Header ────────────────────────────────────────── */
+        .section-header {
+            padding: 2rem 0 1rem;
+        }
+        .section-header h1 {
+            font-weight: 800;
+            font-size: 1.75rem;
+            letter-spacing: -0.03em;
+            color: var(--md-secondary);
+        }
+        .section-header p {
+            color: var(--md-text-muted);
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        /* ── Symptom Checkbox Grid ─────────────────────────────────── */
+        .symptom-card {
+            background: var(--md-surface);
+            border: 2px solid var(--md-border);
+            border-radius: var(--md-radius);
+            padding: 0.85rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            box-sizing: border-box;
+            overflow: hidden;
+            width: 100%;
+            min-width: 0;
+        }
+        .symptom-card:hover {
+            border-color: var(--md-primary);
+            background: var(--md-primary-light);
+        }
+        .symptom-card.checked {
+            border-color: var(--md-primary);
+            background: var(--md-primary-light);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+        .symptom-card .form-check-input {
+            margin: 0;
+            flex-shrink: 0;
+            width: 1.15em;
+            height: 1.15em;
+        }
+        .symptom-card .form-check-input:checked {
+            background-color: var(--md-primary);
+            border-color: var(--md-primary);
+        }
+        .symptom-card label {
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.88rem;
+            margin: 0;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+
+        /* ── Severity Indicator ────────────────────────────────────── */
+        .severity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .severity-1 { background: #94a3b8; }
+        .severity-2 { background: #60a5fa; }
+        .severity-3 { background: #fbbf24; }
+        .severity-4 { background: #fb923c; }
+        .severity-5 { background: #ef4444; }
+
+        /* ── Accordion ─────────────────────────────────────────────── */
+        .md-accordion .accordion-button {
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: var(--md-radius) !important;
+        }
+        .md-accordion .accordion-button:not(.collapsed) {
+            background: var(--md-primary-light);
+            color: var(--md-primary);
+            box-shadow: none;
+        }
+        .md-accordion .accordion-item {
+            border: 1px solid var(--md-border);
+            border-radius: var(--md-radius) !important;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Table ─────────────────────────────────────────────────── */
+        .md-table {
+            border-radius: var(--md-radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--md-border);
+        }
+        .md-table thead th {
+            background: var(--md-surface-alt);
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--md-text-muted);
+            border-bottom: 2px solid var(--md-border);
+            padding: 0.85rem 1rem;
+        }
+        .md-table tbody td {
+            padding: 0.85rem 1rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--md-border);
+        }
+        .md-table tbody tr:hover {
+            background: var(--md-primary-light);
+        }
+        .md-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ── Footer ────────────────────────────────────────────────── */
+        .md-footer {
+            background: var(--md-secondary);
+            color: #94a3b8;
+            padding: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+        .md-footer a {
+            color: #cbd5e1;
+            text-decoration: none;
+        }
+        .md-footer a:hover {
+            color: #fff;
+        }
+
+        /* ── Animations ────────────────────────────────────────────── */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-in {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        .animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- ═══════════ Navbar ═══════════ -->
+    <nav class="navbar navbar-expand-lg md-navbar sticky-top" id="main-navbar">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'patient_cases:symptom-checker' %}">
+                <span class="brand-icon"><i class="bi bi-heart-pulse"></i></span>
+                MediDiagnose
+            </a>
+            <button class="navbar-toggler border-0" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link {% block nav_checker %}{% endblock %}"
+                           href="{% url 'patient_cases:symptom-checker' %}"
+                           id="nav-symptom-checker">
+                            <i class="bi bi-clipboard2-pulse me-1"></i>Symptom Checker
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% block nav_history %}{% endblock %}"
+                           href="{% url 'patient_cases:case-history' %}"
+                           id="nav-case-history">
+                            <i class="bi bi-clock-history me-1"></i>Case History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/" id="nav-admin">
+                            <i class="bi bi-gear me-1"></i>Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════ Messages ═══════════ -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert"
+             style="border-radius: var(--md-radius); border: none;">
+            {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
+            {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
+            {% if message.tags == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>{% endif %}
+            {% if message.tags == 'info' %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ═══════════ Main Content ═══════════ -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ═══════════ Footer ═══════════ -->
+    <footer class="md-footer mt-auto">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="d-flex align-items-center gap-2">
+                        <i class="bi bi-heart-pulse"></i>
+                        <strong style="color: #e2e8f0;">MediDiagnose</strong>
+                        — Medical Expert System
+                    </span>
+                </div>
+                <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                    <span>Built with Django &amp; Forward Chaining Inference</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            crossorigin="anonymous"></script>
+
+    <script>
+        // Navbar shadow on scroll
+        window.addEventListener('scroll', () => {
+            document.getElementById('main-navbar')
+                ?.classList.toggle('scrolled', window.scrollY > 10);
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

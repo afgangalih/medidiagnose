@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Diagnosis Result — MediDiagnose{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Section Header -->
+    <div class="section-header animate-in">
+        <div class="d-flex align-items-start gap-3 mb-2">
+            <div style="width: 48px; height: 48px; background: var(--md-gradient); border-radius: 14px;
+                        display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-file-earmark-medical text-white fs-4"></i>
+            </div>
+            <div>
+                <h1 class="mb-1">Diagnosis Result</h1>
+                <p class="mb-0 d-flex flex-wrap align-items-center gap-2">
+                    <span><strong>Patient:</strong> {{ case.patient_identifier }}</span>
+                    <span class="text-muted">|</span>
+                    <span><strong>Date:</strong> {{ case.session_date|date:"M d, Y H:i" }}</span>
+                    <span class="text-muted">|</span>
+                    <span><strong>Case #{{ case.pk }}</strong></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column — Results -->
+        <div class="col-lg-8">
+
+            <!-- Reported Symptoms -->
+            <div class="md-card mb-4 animate-in animate-delay-1">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-list-check text-primary"></i>
+                    Reported Symptoms
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for symptom in case.reported_symptoms_snapshot %}
+                        <span class="badge rounded-pill px-3 py-2"
+                              style="background: var(--md-primary-light); color: var(--md-primary); font-weight: 500; font-size: 0.85rem;">
+                            <i class="bi bi-check-circle me-1"></i>{{ symptom.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inferred Diseases -->
+            {% for result in enriched_results %}
+            <div class="md-card mb-4 animate-in animate-delay-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1" style="letter-spacing: -0.02em;">
+                                {{ result.disease_name }}
+                            </h5>
+                            <p class="text-muted mb-0" style="font-size: 0.88rem;">{{ result.description }}</p>
+                        </div>
+                        <span class="badge-urgency-{{ result.urgency_level|lower }}">
+                            {% if result.urgency_level == "HIGH" %}
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            {% elif result.urgency_level == "MEDIUM" %}
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle me-1"></i>
+                            {% endif %}
+                            {{ result.urgency_display }}
+                        </span>
+                    </div>
+
+                    <!-- Confidence Bar -->
+                    {% with confidence=result.final_confidence %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold" style="font-size: 0.82rem; color: var(--md-text-muted);">
+                                Confidence Score
+                            </span>
+                            <span class="fw-bold" style="font-size: 0.95rem;">
+                                {% widthratio confidence 1 100 %}%
+                            </span>
+                        </div>
+                        <div class="md-progress">
+                            {% widthratio confidence 1 100 as pct %}
+                            <div class="md-progress-bar {% if pct >= 70 %}high{% elif pct >= 40 %}medium{% else %}low{% endif %}"
+                                 style="width: {{ pct }}% !important;" role="progressbar"
+                                 aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+
+                    <!-- Treatments -->
+                    <div class="p-3 rounded-3" style="background: var(--md-surface-alt); border: 1px solid var(--md-border);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-capsule text-success"></i>
+                            <span class="fw-semibold" style="font-size: 0.85rem;">Recommended Treatments</span>
+                        </div>
+                        <p class="mb-0" style="font-size: 0.88rem; color: var(--md-text-muted);">{{ result.treatments }}</p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="md-card mb-4">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-emoji-neutral fs-1 text-muted"></i>
+                    <h5 class="mt-3 fw-semibold">No Diseases Matched</h5>
+                    <p class="text-muted">The inference engine did not find any matching diagnostic rules for the reported symptoms.</p>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Explanation Trace Accordion -->
+            {% if trace %}
+            <div class="md-card mb-4 animate-in animate-delay-3">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-diagram-3 text-primary"></i>
+                    Explanation Trace
+                </div>
+                <div class="card-body">
+                    <div class="accordion md-accordion" id="explanationAccordion">
+                        {% for rule in case.applied_rules_trace %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#rule-{{ forloop.counter }}"
+                                        aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                                        aria-controls="rule-{{ forloop.counter }}">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-lightning-charge"></i>
+                                        Rule #{{ rule.rule_id }}
+                                    </span>
+                                </button>
+                            </h2>
+                            <div id="rule-{{ forloop.counter }}"
+                                 class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                                 data-bs-parent="#explanationAccordion">
+                                <div class="accordion-body" style="font-size: 0.9rem;">
+                                    {{ rule.explanation }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right Column — Meta Info -->
+        <div class="col-lg-4">
+            <!-- Session Summary Card -->
+            <div class="md-card mb-4 animate-in animate-delay-1" style="position: sticky; top: 80px;">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    Session Summary
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
+                        <li class="d-flex justify-content-between py-2" style="border-bottom: 1px solid var(--md-border);">
+                            <span class="text-muted">Case ID</span>
+                            <span class="fw-semibold">#{{ case.pk }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2" style="border-bottom: 1px solid var(--md-border);">
+                            <span class="text-muted">Patient</span>
+                            <span class="fw-semibold">{{ case.patient_identifier }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2" style="border-bottom: 1px solid var(--md-border);">
+                            <span class="text-muted">Date</span>
+                            <span class="fw-semibold">{{ case.session_date|date:"M d, Y" }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2" style="border-bottom: 1px solid var(--md-border);">
+                            <span class="text-muted">Symptoms</span>
+                            <span class="fw-semibold">{{ case.reported_symptoms_snapshot|length }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2" style="border-bottom: 1px solid var(--md-border);">
+                            <span class="text-muted">Diseases Found</span>
+                            <span class="fw-semibold">{{ enriched_results|length }}</span>
+                        </li>
+                        {% if trace %}
+                        <li class="d-flex justify-content-between py-2" style="border-bottom: 1px solid var(--md-border);">
+                            <span class="text-muted">Strategy</span>
+                            <span class="fw-semibold">{{ trace.get_strategy_used_display }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2">
+                            <span class="text-muted">Execution Time</span>
+                            <span class="fw-semibold">{{ trace.execution_time_ms }}ms</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card-body pt-0">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'patient_cases:symptom-checker' %}" class="btn btn-md-primary">
+                            <i class="bi bi-plus-circle me-2"></i>New Diagnosis
+                        </a>
+                        <a href="{% url 'patient_cases:case-history' %}" class="btn btn-outline-secondary"
+                           style="border-radius: 10px; font-weight: 500;">
+                            <i class="bi bi-clock-history me-2"></i>View History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate progress bars on scroll into view
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const bar = entry.target;
+                    const width = bar.style.width;
+                    bar.style.width = '0%';
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            bar.style.width = width;
+                        });
+                    });
+                    observer.unobserve(bar);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.md-progress-bar').forEach(bar => {
+            observer.observe(bar);
+        });
+    });
+</script>
+{% endblock %}

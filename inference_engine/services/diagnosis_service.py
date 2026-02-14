@@ -158,7 +158,7 @@ class DiagnosisService:
             {
                 "disease_id": d["disease_id"],
                 "disease_name": d["disease_name"],
-                "confidence": d["final_confidence"],
+                "final_confidence": d["final_confidence"],
             }
             for d in result.get("diseases", [])
         ]

@@ -83,11 +83,14 @@ TEMPLATES: list[dict] = [
 WSGI_APPLICATION: str = "medidiagnose.wsgi.application"
 
 # =============================================================================
-# Database – PostgreSQL via DATABASE_URL
+# Database – SQLite for development
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # =============================================================================
 DATABASES: dict = {
-    "default": env.db("DATABASE_URL"),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
 # =============================================================================
